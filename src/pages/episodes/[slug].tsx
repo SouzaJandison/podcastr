@@ -3,7 +3,9 @@ import { format, parseISO } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import Image from 'next/image';
 import Link from 'next/link';
+import Head from 'next/head';
 
+import { usePlay } from '../../contexts/PlayerContext';
 import { api } from '../../services/api';
 import { convertDurationToTimeString } from '../../utils/convertDurationToTimeString';
 
@@ -22,12 +24,18 @@ interface IEpisodes {
 }
 
 interface IEpisodesProps {
-  episodes: IEpisodes;
+  episode: IEpisodes;
 }
 
-export default function Episode({ episodes }: IEpisodesProps) {
+export default function Episode({ episode }: IEpisodesProps) {
+  const { play } = usePlay();
+
   return (
     <div className={styles.episode}>
+      <Head>
+        <title>{episode.title} | Podcastr</title>
+      </Head>
+
       <div className={styles.episodeContent}> 
         <div className={styles.thumbnailContainer}>
           <Link href="/">
@@ -38,24 +46,24 @@ export default function Episode({ episodes }: IEpisodesProps) {
           <Image 
             width={700} 
             height={160} 
-            src={episodes.thumbnail}
+            src={episode.thumbnail}
             objectFit="cover"
           />
-          <button type="button">
+          <button type="button" onClick={() => play(episode)}>
             <img src="/play.svg" alt="Tocar Episódio"/>
           </button>
         </div>
 
         <header>
-          <h1>{episodes.title}</h1>
-          <span>{episodes.members}</span>
-          <span>{episodes.publishedAt}</span>
-          <span>{episodes.durationAsString}</span>
+          <h1>{episode.title}</h1>
+          <span>{episode.members}</span>
+          <span>{episode.publishedAt}</span>
+          <span>{episode.durationAsString}</span>
         </header>
 
         <div 
           className={styles.description} 
-          dangerouslySetInnerHTML={{ __html: episodes.description }} 
+          dangerouslySetInnerHTML={{ __html: episode.description }} 
         />
       </div>
     </div>
@@ -87,7 +95,7 @@ export const getStaticProps: GetStaticProps = async (ctx) => {
   const { slug } = ctx.params;
   const { data } = await api.get(`episodes/${slug}`);
 
-  const episodes = {
+  const episode = {
       id: data.id,
       title: data.title,
       members: data.members,
@@ -101,7 +109,7 @@ export const getStaticProps: GetStaticProps = async (ctx) => {
 
   return {
     props: {
-      episodes
+      episode
     },
     revalidate: 60 * 60 * 24 // 24 hours
   }
